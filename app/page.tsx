@@ -52,9 +52,7 @@ export default function ExpenseSplitterPage() {
         </div>
 
         <Card className="p-6 border-2 border-primary mb-6">
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            Tip Rate (%)
-          </label>
+          <label className="text-xl font-bold text-primary">Tip Rate (%)</label>
           <Input
             type="number"
             placeholder="Enter your tip percentage"
