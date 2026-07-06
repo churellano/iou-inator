@@ -2,12 +2,15 @@ import type { ExpenseItem, Participant, Summary } from "./types";
 
 export function calculateSummary(
   expenses: ExpenseItem[],
-  participants: Participant[]
+  participants: Participant[],
+  tipRate: number,
+  isTipBeforeTax: boolean = false,
 ): Summary[] {
   // Initialize summary for each participant
   const summaries: Summary[] = participants.map((participant) => ({
     participantId: participant.id,
     participantName: participant.name,
+    items: [],
     subtotal: 0,
     tax: 0,
     tip: 0,
@@ -25,11 +28,18 @@ export function calculateSummary(
       // Calculate this participant's share based on their percentage
       const shareRatio = percentage / 100;
       const participantSubtotal = itemTotal * shareRatio;
-      const participantTax = ((itemTotal * expense.taxRate) / 100) * shareRatio;
-      const participantTip = ((itemTotal * expense.tipRate) / 100) * shareRatio;
+      const participantTax = (participantSubtotal * expense.taxRate) / 100;
+      const participantTip =
+        (((isTipBeforeTax
+          ? participantSubtotal
+          : participantSubtotal + participantTax) *
+          tipRate) /
+          100) *
+        shareRatio;
 
       const summary = summaries.find((s) => s.participantId === participantId);
       if (summary) {
+        summary.items.push(expense.name);
         summary.subtotal += participantSubtotal;
         summary.tax += participantTax;
         summary.tip += participantTip;
@@ -54,7 +64,7 @@ export function calculateGrandTotal(summaries: Summary[]): {
       tip: acc.tip + summary.tip,
       total: acc.total + summary.total,
     }),
-    { subtotal: 0, tax: 0, tip: 0, total: 0 }
+    { subtotal: 0, tax: 0, tip: 0, total: 0 },
   );
 }
 

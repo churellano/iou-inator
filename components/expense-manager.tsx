@@ -6,7 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { X, Plus, Receipt, ChevronDown, ChevronUp } from "lucide-react";
 import type { ExpenseItem, Participant } from "@/lib/types";
-import { PRESET_ITEM_TYPES, getTaxRateForType } from "@/lib/item-types";
+import {
+  ItemType,
+  PRESET_ITEM_TYPES,
+  getTaxRateForType,
+} from "@/lib/item-types";
 import { getIsValidExpense } from "@/lib/getIsValidExpense";
 import { createEvenParticipantSplits } from "@/lib/calculations";
 
@@ -24,12 +28,13 @@ export function ExpenseManager({
   const [itemName, setItemName] = useState("");
   const [itemQuantity, setItemQuantity] = useState("");
   const [itemPrice, setItemPrice] = useState("");
-  const [itemType, setItemType] = useState<string>("custom");
+  const [itemType, setItemType] = useState<ItemType>(ItemType.Custom);
   const [expandedExpense, setExpandedExpense] = useState<string | null>(null);
 
   const addExpense = () => {
     if (getIsValidExpense({ itemName, itemQuantity, itemPrice })) {
-      const taxRate = itemType === "custom" ? 0 : getTaxRateForType(itemType);
+      const taxRate =
+        itemType === ItemType.Custom ? 0 : getTaxRateForType(itemType);
       const participantSplits: Record<string, number> = {};
       const equalSplit = 100 / participants.length;
       participants.forEach((p) => {
@@ -45,13 +50,12 @@ export function ExpenseManager({
         participantSplits,
         itemType,
         taxRate,
-        tipRate: 0,
       };
       onExpensesChange([...expenses, newExpense]);
       setItemName("");
       setItemQuantity("");
       setItemPrice("");
-      setItemType("custom");
+      setItemType(ItemType.Custom);
     }
   };
 
@@ -61,7 +65,7 @@ export function ExpenseManager({
 
   const updateExpense = (id: string, updates: Partial<ExpenseItem>) => {
     onExpensesChange(
-      expenses.map((e) => (e.id === id ? { ...e, ...updates } : e))
+      expenses.map((e) => (e.id === id ? { ...e, ...updates } : e)),
     );
   };
 
@@ -70,20 +74,10 @@ export function ExpenseManager({
     if (!expense) return;
 
     const isIncluded = expense.participants.includes(participantId);
-    let newParticipants: string[];
-    const newSplits = { ...expense.participantSplits };
-
-    if (isIncluded) {
-      // Remove participant
-      newParticipants = expense.participants.filter(
-        (id) => id !== participantId
-      );
-      delete newSplits[participantId];
-    } else {
-      // Add participant with default split
-      newParticipants = [...expense.participants, participantId];
-      newSplits[participantId] = 0;
-    }
+    const newParticipants = isIncluded
+      ? expense.participants.filter((id) => id !== participantId)
+      : [...expense.participants, participantId];
+    const newSplits = createEvenParticipantSplits(newParticipants);
 
     if (newParticipants.length > 0) {
       updateExpense(expenseId, {
@@ -116,9 +110,9 @@ export function ExpenseManager({
     });
   };
 
-  const handleItemTypeChange = (expenseId: string, newTypeId: string) => {
-    if (newTypeId === "custom") {
-      updateExpense(expenseId, { itemType: "custom" });
+  const handleItemTypeChange = (expenseId: string, newTypeId: ItemType) => {
+    if (newTypeId === ItemType.Custom) {
+      updateExpense(expenseId, { itemType: ItemType.Custom });
     } else {
       const taxRate = getTaxRateForType(newTypeId);
       updateExpense(expenseId, { itemType: newTypeId, taxRate });
@@ -127,7 +121,7 @@ export function ExpenseManager({
 
   const getTotalPercentage = (
     splits: Record<string, number>,
-    participantIds: string[]
+    participantIds: string[],
   ) => {
     return participantIds.reduce((sum, id) => sum + (splits[id] || 0), 0);
   };
@@ -189,7 +183,7 @@ export function ExpenseManager({
           <div className="flex gap-2">
             <select
               value={itemType}
-              onChange={(e) => setItemType(e.target.value)}
+              onChange={(e) => setItemType(e.target.value as ItemType)}
               className="flex-1 px-3 py-2 bg-background border border-primary rounded text-sm text-foreground"
             >
               <option value="custom">Custom Tax Rate</option>
@@ -217,7 +211,7 @@ export function ExpenseManager({
               expenses.map((expense) => {
                 const totalPercentage = getTotalPercentage(
                   expense.participantSplits,
-                  expense.participants
+                  expense.participants,
                 );
                 const isInvalid = Math.abs(totalPercentage - 100) > 0.01;
 
@@ -234,7 +228,7 @@ export function ExpenseManager({
                         <p className="text-lg font-bold text-primary">
                           $
                           {`${(expense.quantity * expense.price).toFixed(
-                            2
+                            2,
                           )} ($${expense.price.toFixed(2)} ea)`}
                         </p>
                       </div>
@@ -256,11 +250,14 @@ export function ExpenseManager({
                         <select
                           value={expense.itemType}
                           onChange={(e) =>
-                            handleItemTypeChange(expense.id, e.target.value)
+                            handleItemTypeChange(
+                              expense.id,
+                              e.target.value as ItemType,
+                            )
                           }
                           className="w-full px-3 py-2 bg-background border border-primary rounded text-sm text-foreground"
                         >
-                          <option value="custom">Custom</option>
+                          <option value={ItemType.Custom}>Custom</option>
                           {PRESET_ITEM_TYPES.map((type) => (
                             <option key={type.id} value={type.id}>
                               {type.name} ({type.taxRate}%)
@@ -270,9 +267,7 @@ export function ExpenseManager({
                       </div>
                       <div>
                         <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                          {expense.itemType === "custom"
-                            ? "Tax Rate (%)"
-                            : "Tax Rate (%)"}
+                          Tax Rate (%)
                         </label>
                         <Input
                           type="number"
@@ -294,34 +289,11 @@ export function ExpenseManager({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 mb-3">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                          Tip Rate (%)
-                        </label>
-                        <Input
-                          type="number"
-                          value={expense.tipRate}
-                          onChange={(e) =>
-                            updateExpense(expense.id, {
-                              tipRate: e.target.value
-                                ? Number.parseFloat(e.target.value)
-                                : undefined,
-                            })
-                          }
-                          className="bg-background border-primary"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                    </div>
-
                     <div className="mt-3 pt-3 border-t border-primary/20">
                       <button
                         onClick={() =>
                           setExpandedExpense(
-                            expandedExpense === expense.id ? null : expense.id
+                            expandedExpense === expense.id ? null : expense.id,
                           )
                         }
                         className="flex items-center justify-between w-full text-left hover:opacity-70 transition-opacity"
@@ -337,7 +309,7 @@ export function ExpenseManager({
                           >
                             {isInvalid
                               ? `${totalPercentage.toFixed(
-                                  1
+                                  1,
                                 )}% (must equal 100%)`
                               : "100% allocated"}
                           </p>
@@ -353,7 +325,7 @@ export function ExpenseManager({
                         <div className="mt-3 space-y-3 p-3 bg-background rounded border border-primary">
                           {expense.participants.map((participantId) => {
                             const participant = participants.find(
-                              (p) => p.id === participantId
+                              (p) => p.id === participantId,
                             );
                             if (!participant) return null;
 
@@ -381,7 +353,7 @@ export function ExpenseManager({
                                           ...expense.participantSplits,
                                           [participantId]: Math.max(
                                             0,
-                                            Math.min(100, newValue)
+                                            Math.min(100, newValue),
                                           ),
                                         },
                                       });
@@ -429,7 +401,7 @@ export function ExpenseManager({
                             <div className="space-y-1">
                               {participants
                                 .filter(
-                                  (p) => !expense.participants.includes(p.id)
+                                  (p) => !expense.participants.includes(p.id),
                                 )
                                 .map((participant) => (
                                   <button
@@ -437,7 +409,7 @@ export function ExpenseManager({
                                     onClick={() =>
                                       toggleParticipant(
                                         expense.id,
-                                        participant.id
+                                        participant.id,
                                       )
                                     }
                                     className="w-full text-left px-2 py-1 text-sm text-foreground hover:bg-primary/10 rounded transition-colors"

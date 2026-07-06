@@ -18,12 +18,12 @@ export interface ExpenseItem {
   participantSplits: Record<string, number>; // participantId -> percentage (0-100)
   itemType: "custom" | string; // "custom" or preset type id
   taxRate: number; // percentage
-  tipRate: number; // percentage
 }
 
 export interface Summary {
   participantId: string;
   participantName: string;
+  items: string[];
   subtotal: number;
   tax: number;
   tip: number;

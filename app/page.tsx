@@ -6,14 +6,25 @@ import { ExpenseManager } from "@/components/expense-manager";
 import { SummaryDisplay } from "@/components/summary-display";
 import { calculateSummary } from "@/lib/calculations";
 import type { Participant, ExpenseItem } from "@/lib/types";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ExpenseSplitterPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [tipRate, setTipRate] = useState("");
+  const [isTipBeforeTax, setIsTipBeforeTax] = useState(false);
 
   const summaries = useMemo(
-    () => calculateSummary(expenses, participants),
-    [expenses, participants]
+    () =>
+      calculateSummary(
+        expenses,
+        participants,
+        Number.parseFloat(tipRate),
+        isTipBeforeTax,
+      ),
+    [expenses, participants, tipRate, isTipBeforeTax],
   );
 
   return (
@@ -39,6 +50,28 @@ export default function ExpenseSplitterPage() {
             onExpensesChange={setExpenses}
           />
         </div>
+
+        <Card className="p-6 border-2 border-primary mb-6">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Tip Rate (%)
+          </label>
+          <Input
+            type="number"
+            placeholder="Enter your tip percentage"
+            value={tipRate}
+            onChange={(e) => setTipRate(e.target.value)}
+            className="flex-1 bg-background border-primary"
+            step="1"
+            min="0"
+          />
+          <div className="flex gap-2 items-center">
+            <Checkbox
+              checked={isTipBeforeTax}
+              onCheckedChange={(checked) => setIsTipBeforeTax(!!checked)}
+            />
+            <label className="text-sm font-medium">Tip before tax?</label>
+          </div>
+        </Card>
 
         <SummaryDisplay summaries={summaries} />
       </div>
