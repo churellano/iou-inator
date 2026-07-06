@@ -9,6 +9,7 @@ import type { Participant, ExpenseItem } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SquarePercent } from "lucide-react";
 
 export default function ExpenseSplitterPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -52,7 +53,10 @@ export default function ExpenseSplitterPage() {
         </div>
 
         <Card className="p-6 border-2 border-primary mb-6">
-          <label className="text-xl font-bold text-primary">Tip Rate (%)</label>
+          <div className="flex items-center gap-2 mb-4">
+            <SquarePercent className="w-5 h-5 text-primary" />
+            <h2 className="text-xl font-bold text-primary">Tip Rate (%)</h2>
+          </div>
           <Input
             type="number"
             placeholder="Enter your tip percentage"
