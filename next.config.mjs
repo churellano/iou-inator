@@ -6,6 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-}
+  basePath: "/onmi",
+  output: "export",
+  reactStrictMode: true,
+};
 
-export default nextConfig
+export default nextConfig;
