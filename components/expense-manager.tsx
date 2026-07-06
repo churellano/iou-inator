@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X, Plus, Receipt, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Plus, Receipt, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { ExpenseItem, Participant } from "@/lib/types";
 import {
   ItemType,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/item-types";
 import { getIsValidExpense } from "@/lib/getIsValidExpense";
 import { createEvenParticipantSplits } from "@/lib/calculations";
+import { v4 as uuidv4 } from "uuid";
 
 interface ExpenseManagerProps {
   expenses: ExpenseItem[];
@@ -42,7 +43,7 @@ export function ExpenseManager({
       });
 
       const newExpense: ExpenseItem = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         name: itemName.trim(),
         quantity: Number.parseInt(itemQuantity, 10),
         price: Number.parseFloat(itemPrice),
@@ -145,6 +146,14 @@ export function ExpenseManager({
       <div className="flex items-center gap-2 mb-4">
         <Receipt className="w-5 h-5 text-primary" />
         <h2 className="text-xl font-bold text-primary">Expenses</h2>
+        <div className="flex-1 flex justify-end">
+          {expenses.length > 0 && (
+            <Button variant="destructive" onClick={() => onExpensesChange([])}>
+              <Trash2 className="w-4 h-4" />
+              Reset expenses
+            </Button>
+          )}
+        </div>
       </div>
 
       {participants.length === 0 ? (
