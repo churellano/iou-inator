@@ -88,29 +88,6 @@ export function ExpenseManager({
     }
   };
 
-  const toggleAllParticipants = (expenseId: string) => {
-    const expense = expenses.find((e) => e.id === expenseId);
-    if (!expense) return;
-
-    const allSelected = expense.participants.length === participants.length;
-    const newParticipants = allSelected
-      ? [participants[0].id]
-      : participants.map((p) => p.id);
-
-    const newSplits: Record<string, number> = {};
-    if (newParticipants.length > 0) {
-      const equalSplit = 100 / newParticipants.length;
-      newParticipants.forEach((id) => {
-        newSplits[id] = equalSplit;
-      });
-    }
-
-    updateExpense(expenseId, {
-      participants: newParticipants,
-      participantSplits: newSplits,
-    });
-  };
-
   const handleItemTypeChange = (expenseId: string, newTypeId: ItemType) => {
     if (newTypeId === ItemType.Custom) {
       updateExpense(expenseId, { itemType: ItemType.Custom });
